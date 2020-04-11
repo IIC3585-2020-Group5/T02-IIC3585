@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/rxjs/6.5.5/rxjs.umd.js"
+    integrity="sha256-BPOaS3tuW70eTwQeRE52HgXQWkZj11ntjXAMv4rnXqo=" crossorigin="anonymous"></script>
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+  <link rel="stylesheet" href="main.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.15/lodash.js"
+    integrity="sha256-kzv+r6dLqmz7iYuR2OdwUgl4X5RVsoENBzigdF5cxtU=" crossorigin="anonymous"></script>
+</head>
+
+<body>
+  <div class="container mt-5">
+    <div class="jumbotron" id="game-init">
+      <h1 class="display-4">+Trivia</h1>
+      <p class="lead">This is a copy of a mini-game from Trivia Murder Party 2 in Party Pack 6</p>
+      <hr class="my-4">
+      <p>It uses the RxJS as the primary library for the development</p>
+      <a id="init-button" class="btn btn-primary btn-lg" href="#" role="button">Start Game</a>
+    </div>
+
+    <div id="game-div" style="display: none;">
+      <div class="row flex" id="game-row">
+        <div class="progress flex-grow-1">
+          <div id="time-bar" class=" progress-bar bg-success" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">60s</div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-6">
+          <h1>Player 1 <span id="player1-score" class="badge badge-primary">0</span></h1>
+          <div class="card">
+            <div class="card-header font-weight-bold d-flex  justify-content-center" id="player1-question"></div>
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item d-flex align-items-center justify-content-center">
+                <span class="mono border-right border-1 border-dark pr-3">Q</span>
+                <span class="flex-grow-1 text-center" id="player1-answer1"></span>
+              </li>
+              <li class="list-group-item d-flex align-items-center justify-content-center">
+                <span class="mono border-right border-1 border-dark pr-3">W</span>
+                <span class="flex-grow-1 text-center" id="player1-answer2"></span>
+              </li>
+              <li class="list-group-item d-flex align-items-center justify-content-center">
+                <span class="mono border-right border-1 border-dark pr-3">E</span>
+                <span class="flex-grow-1 text-center" id="player1-answer3"></span>
+              </li>
+              <li class="list-group-item d-flex align-items-center justify-content-center">
+                <span class="mono border-right border-1 border-dark pr-3">R</span>
+                <span class="flex-grow-1 text-center" id="player1-answer4"></span>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="col-6">
+          <h1>Player 2 <span id="player2-score" class="badge badge-primary">0</span></h1>
+          <div class="card">
+            <div class="card-header" id="player2-question">
+
+            </div>
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item" id="player2-answer1"></li>
+              <li class="list-group-item" id="player2-answer2"></li>
+              <li class="list-group-item" id="player2-answer3"></li>
+              <li class="list-group-item" id="player2-answer4"></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="modal fade" id="end-game-modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="end-game-modal-label"></h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div id="end-game-modal-body" class="modal-body"></div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="button" id="rematch-btn" onClick="window.location.reload();" class="btn btn-primary" data-dismiss="modal">Rematch</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+  </div>
+
+  <div>
+    <script type="module" src="main.js"></script>
+
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+      integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+      crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"
+      integrity="sha384-6khuMg9gaYr5AxOqhkVIODVIvm9ynTT5J4V1cfthmT+emCG6yVmEZsRHdxlotUnm"
+      crossorigin="anonymous"></script>
+  </div>
+</body>
+
+</html>
