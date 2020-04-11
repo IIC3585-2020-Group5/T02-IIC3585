@@ -1,4 +1,3 @@
-// const _ = require("lodash");
 const operator = rxjs.operators;
 
 
@@ -8,9 +7,33 @@ const player1Answer2 = document.getElementById("player1-answer2");
 const player1Answer3 = document.getElementById("player1-answer3");
 const player1Answer4 = document.getElementById("player1-answer4");
 const player1ScoreBadge = $("#player1-score");
+
+const player2Question = document.getElementById("player2-question");
+const player2Answer1 = document.getElementById("player2-answer1");
+const player2Answer2 = document.getElementById("player2-answer2");
+const player2Answer3 = document.getElementById("player2-answer3");
+const player2Answer4 = document.getElementById("player2-answer4");
 const player2ScoreBadge = $("#player2-score");
 
+let player1keys = new Map();
+player1keys.set("KeyQ", player1Answer1);
+player1keys.set("KeyW", player1Answer2);
+player1keys.set("KeyE", player1Answer3);
+player1keys.set("KeyR", player1Answer4);
+
+let player2keys = new Map();
+player2keys.set("KeyU", player2Answer1);
+player2keys.set("KeyI", player2Answer2);
+player2keys.set("KeyO", player2Answer3);
+player2keys.set("KeyP", player2Answer4);
+
+
+let player1Freeze = false;
+let stopReceiving1 = false;
 let player1Score = 0;
+
+let player2Freeze = false;
+let stopReceiving2 = false;
 let player2Score = 0;
 
 const randomFormulaGenerator = () => {
@@ -19,22 +42,24 @@ const randomFormulaGenerator = () => {
     let symbols = ["*", "+", "-"];
     let positive = "";
     let negative = "-";
-    return `${Math.random() > 0.7 ? negative : positive} ${a} ${symbols.sample()} ${b}`
+    return `${Math.random() > 0.5 ? negative : positive} ${a} ${_.sampleSize(symbols, 1)[0]} ${b}`
 }
 
-const player1AnswerSetter = (formula) => {
+const playerAnswerSetter = (player) => {
 
-    if (formula.length <= 0) {
-        return;
-    }
-
-    let realAnswer = eval(formula);
     let answerSet = [player1Answer1, 
         player1Answer2, 
         player1Answer3,
         player1Answer4,
     ]
- 
+    if (player === 2) {
+        answerSet = [player2Answer1, 
+            player2Answer2, 
+            player2Answer3,
+            player2Answer4,
+        ]
+    }
+
     let fakeAnswer = (element, real) => {
         let fake;
         if (Math.random() > 0.5) {
@@ -46,17 +71,17 @@ const player1AnswerSetter = (formula) => {
         return element;
     }
 
-    answerSet = _.sampleSize(answerSet, 4).map(x => fakeAnswer(x, realAnswer));
-    console.log(answerSet);
-    let index = Math.floor(Math.random()*answerSet.length);
-    answerSet[index].innerHTML = realAnswer;
+    let setAnswers = (formula) => {
+        let realAnswer = eval(formula);
+ 
+        answerSet = _.sampleSize(answerSet, 4).map(x => fakeAnswer(x, realAnswer));
+        console.log(answerSet);
+        let index = Math.floor(Math.random()*answerSet.length);
+        answerSet[index].innerHTML = realAnswer;
+    }
 
+    return setAnswers;
 }
-
-const source = rxjs.interval(1000);
-let player1keys = new Map();
-let player1Freeze = false;
-let stopReceiving1 = false;
 
 const checkAnswer = (question, answer) => {
     console.log(parseInt(answer));
@@ -68,86 +93,81 @@ const checkAnswer = (question, answer) => {
     return correct;
 }
 
-const freezePlayer1 = (x) => {
+const freezePlayer = (player) => {
 
-    if (player1Freeze) {
-        console.log("freezing");
-        let tm = rxjs.timer(3000).pipe(operator.map(x => {
-            let formula = randomFormulaGenerator();
-            player1Question.innerHTML = formula;
-            player1AnswerSetter(formula);
-            player1Freeze = false;
-        }));
-        tm.subscribe()
-    }
-    console.log("Returning ");
-    console.log(x);
-    return x;
-}
-
-
-const takeAction = (correct) => {
-    let formula = randomFormulaGenerator();
-    if (correct) {
-        player1Score += 100;
-        player1Question.innerHTML = formula;
-        player1AnswerSetter(formula);
-    } else {
-        player1Freeze = true;
-        player1Question.innerHTML = "Aweonao";
-        player1Answer1.innerHTML = "pUSY";
-        player1Answer2.innerHTML = "pUSY";
-        player1Answer3.innerHTML = "pUSY";
-        player1Answer4.innerHTML = "pUSY";
-    }
-    return correct;
-}
-
-const unfreezePlayer1 = (x) => {
-    if (player1Freeze) {
-        player1Freeze = false;
+    let timePenalty1 = rxjs.timer(3000).pipe(operator.map(x => {
         let formula = randomFormulaGenerator();
         player1Question.innerHTML = formula;
         player1AnswerSetter(formula);
+        player1Freeze = false;
+    }));
+
+    let timePenalty2 = rxjs.timer(3000).pipe(operator.map(x => {
+        let formula = randomFormulaGenerator();
+        player2Question.innerHTML = formula;
+        player2AnswerSetter(formula);
+        player2Freeze = false;
+    }));
+
+    let freezePenalty = (x) => {
+        if (player === 1 && player1Freeze) {
+            console.log("freezing");
+            timePenalty1.subscribe()
+        } else if (player === 2 && player2Freeze) {
+            console.log("freezing");
+            timePenalty2.subscribe()
+        }
+        console.log("Returning ");
+        console.log(x);
+        return x;
     }
 
-    return x;
+    return freezePenalty;
 }
 
-//Observables
 
-player1keys.set("KeyQ", player1Answer1);
-player1keys.set("KeyW", player1Answer2);
-player1keys.set("KeyE", player1Answer3);
-player1keys.set("KeyR", player1Answer4);
-const keyEvent1 = rxjs.fromEvent(document, 'keypress')
-    .pipe(
-          operator.filter(x => Array.from(player1keys.keys()).includes(x.code) && !stopReceiving1 && !player1Freeze),
-          operator.map(x => { stopReceiving1 = true; return x; }),
-          operator.map(x => x.code),
-          operator.map(x => player1keys.get(x)),
-          operator.map(x => x.innerHTML),
-          operator.map(x => checkAnswer(player1Question, x)),
-          operator.map(x => takeAction(x)),
-          operator.map(x => scoreUpdate(x)),
-          operator.map((x) => freezePlayer1(x)),
-          operator.map((x) => { stopReceiving1 = false; return x}),
+const takeAction = (player) => {
 
-    )
-    .subscribe(x => console.log(x));
+    let takeActionForAnswer = (correct) => {
+        let formula = randomFormulaGenerator();
+        if (player === 1) {
+            if (correct) {
+                player1Score += 100;
+                player1Question.innerHTML = formula;
+                player1AnswerSetter(formula);
+            } else {
+                player1Freeze = true;
+                player1Question.innerHTML = "WRONG ANSWER";
+                player1Answer1.innerHTML = "Freeze Penalty";
+                player1Answer2.innerHTML = "Freeze Penalty";
+                player1Answer3.innerHTML = "Freeze Penalty";
+                player1Answer4.innerHTML = "Freeze Penalty";
+            }
+        } else if (player === 2) {
+            if (correct) {
+                player2Score += 100;
+                player2Question.innerHTML = formula;
+                player2AnswerSetter(formula);
+            } else {
+                player2Freeze = true;
+                player2Question.innerHTML = "WRONG ANSWER";
+                player2Answer1.innerHTML = "Freeze Penalty";
+                player2Answer2.innerHTML = "Freeze Penalty";
+                player2Answer3.innerHTML = "Freeze Penalty";
+                player2Answer4.innerHTML = "Freeze Penalty";
+            }
+        }
 
-// let valid2 = ["KeyU", "KeyI", "KeyO", "KeyP"];
-// const keyEvent2 = rxjs.fromEvent(document, 'keypress')
-//     .pipe(operator.filter(x => valid2.includes(x.code)))
-//     .subscribe(x => console.log(x.code));
+        return correct;
+    }
 
-
+    return takeActionForAnswer;
+}
 
 
 const scoreUpdate = (x) => {
     // player1Score
     // player1ScoreBadge
-    console.log("pussySlayer")
     let highBadgeColor = "badge-success";
     let lowBadgeColor = "badge-warning";
     if (player1Score > player2Score) {
@@ -166,20 +186,28 @@ const scoreUpdate = (x) => {
     return x;
 }
 
+const source = rxjs.interval(1000);
+
 let initGame = () => {
     var time = rxjs.timer(62000);
     source.pipe(operator.takeUntil(time)).subscribe(x => progressBarModifier(x));
     time.subscribe(x => endGame());
-    let formula = randomFormulaGenerator();
-    player1Question.innerHTML = formula;
-    player1AnswerSetter(formula);
-
+    let formula1 = randomFormulaGenerator();
+    let formula2 = randomFormulaGenerator();
+    player1Question.innerHTML = formula1;
+    player1AnswerSetter(formula1);
+    player2Question.innerHTML = formula2;
+    player2AnswerSetter(formula2);
 }
 
 const endGame = () => {
-    //Avengers
     stopReceiving1 = true;
-    $("#end-game-modal-label").html(`El ganador es ${player1Score > player2Score ? 'Player1' : 'Player2'}!`);
+    stopReceiving2 = true;
+    if (player1Score === player2Score) {
+        $("#end-game-modal-label").html(`Es un empate!`);
+    } else {
+        $("#end-game-modal-label").html(`El ganador es ${player1Score > player2Score ? 'Player1' : 'Player2'}!`);
+    }
     $('#end-game-modal-body').html(`Player 1: ${player1Score} vs Player 2: ${player2Score}`);
     $('#end-game-modal').modal('toggle');
     
@@ -202,6 +230,7 @@ const progressBarModifier = (x) => {
     }
 }
 
+//Game start
 let initButton = document.getElementById("init-button");
 initButton.onclick = () => {
     let initRow = $("#game-init");
@@ -210,46 +239,50 @@ initButton.onclick = () => {
     initRow.slideUp();
     gameRow.slideDown();
 }
+
+
+const player1AnswerSetter = playerAnswerSetter(1);
+const player2AnswerSetter = playerAnswerSetter(2);
+
+let freezePlayer1 = freezePlayer(1);
+let freezePlayer2 = freezePlayer(2);
+
+const takeActionPlayer1 = takeAction(1);
+const takeActionPlayer2 = takeAction(2);
+
+
+//Observables
 rxjs.fromEvent(initButton, 'click').subscribe(initGame);
 
+const keyEvent1 = rxjs.fromEvent(document, 'keypress')
+    .pipe(
+          operator.filter(x => Array.from(player1keys.keys()).includes(x.code) && !stopReceiving1 && !player1Freeze),
+          operator.map(x => { stopReceiving1 = true; return x; }),
+          operator.map(x => x.code),
+          operator.map(x => player1keys.get(x)),
+          operator.map(x => x.innerHTML),
+          operator.map(x => checkAnswer(player1Question, x)),
+          operator.map(x => takeActionPlayer1(x)),
+          operator.map(x => scoreUpdate(x)),
+          operator.map((x) => freezePlayer1(x)),
+          operator.map((x) => { stopReceiving1 = false; return x})
+    )
+    .subscribe(x => console.log(x));
 
-Array.prototype.sample = function(){
-    return this[Math.floor(Math.random()*this.length)];
-}
-
-const checkAnswerFromPlayer = (element, player) => {
-    let result = {player, condition: false}
-    if (!player) {
-        // player 1 
-
-        if (parseInt(element.innerHTML) == parseInt(eval(player1Question.innerHTML))) {
-            // return {player, condition: true};
-            result = {player, condition: true};
-
-        } else {
-            player1Question.innerHTML = "";
-            player1Answer1.innerHTML = "";
-            player1Answer2.innerHTML = "";
-            player1Answer3.innerHTML = "";
-            player1Answer4.innerHTML = "";
-        }
-
-        return new Promise((resolve, reject) => {
-            if (result.condition) {
-                resolve(result);
-            } else {
-                setTimeout(
-                    () => resolve(result), 3000
-                );
-            }
-        })
-    } else {
-        // TODO
-    }
-    return {player, condition: false};
-}
-
-
+const keyEvent2 = rxjs.fromEvent(document, 'keypress')
+    .pipe(
+          operator.filter(x => Array.from(player2keys.keys()).includes(x.code) && !stopReceiving2 && !player2Freeze),
+          operator.map(x => { stopReceiving2 = true; return x; }),
+          operator.map(x => x.code),
+          operator.map(x => player2keys.get(x)),
+          operator.map(x => x.innerHTML),
+          operator.map(x => checkAnswer(player2Question, x)),
+          operator.map(x => takeActionPlayer2(x)),
+          operator.map(x => scoreUpdate(x)),
+          operator.map((x) => freezePlayer2(x)),
+          operator.map((x) => { stopReceiving2 = false; return x})
+    )
+    .subscribe(x => console.log(x));
 
 
 
