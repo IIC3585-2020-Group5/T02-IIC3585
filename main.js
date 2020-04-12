@@ -201,8 +201,8 @@ let initGame = () => {
 }
 
 const endGame = () => {
-    stopReceiving1 = true;
-    stopReceiving2 = true;
+    player1Subscription.unsubscribe();
+    player2Subscription.unsubscribe();
     if (player1Score === player2Score) {
         $("#end-game-modal-label").html(`Es un empate!`);
     } else {
@@ -266,8 +266,7 @@ const keyEvent1 = rxjs.fromEvent(document, 'keypress')
           operator.map(x => scoreUpdate(x)),
           operator.map((x) => freezePlayer1(x)),
           operator.map((x) => { stopReceiving1 = false; return x})
-    )
-    .subscribe(x => console.log(x));
+    );
 
 const keyEvent2 = rxjs.fromEvent(document, 'keypress')
     .pipe(
@@ -281,8 +280,11 @@ const keyEvent2 = rxjs.fromEvent(document, 'keypress')
           operator.map(x => scoreUpdate(x)),
           operator.map((x) => freezePlayer2(x)),
           operator.map((x) => { stopReceiving2 = false; return x})
-    )
-    .subscribe(x => console.log(x));
+    );
+
+let player1Subscription = keyEvent1.subscribe(x => console.log(x));
+let player2Subscription = keyEvent2.subscribe(x => console.log(x));
+
 
 
 
